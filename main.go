@@ -1,4 +1,4 @@
-package testmek
+package main
 
 import (
 	"Test_Mek/constant"
