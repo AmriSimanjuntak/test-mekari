@@ -16,9 +16,9 @@ type Repositories struct {
 
 func NewRepositories() (*Repositories, error) {
 	db, err := initPostgres("",
-		"postgres.Host", "userDB",
-		"passDB", "postgres.Dbname",
-		"postgres.Port", " postgres.SslMode")
+		"localhost", "postgres",
+		"kmb123", "postgres",
+		"5432", "disable")
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,6 @@ func initPostgres(env, host, user, password, name, port, sslMode string, cfg ...
 	if len(cfg) > 0 {
 		gormCfg = &cfg[0]
 	}
-
 	db, err := gorm.Open(postgres.Open(dsn), gormCfg)
 	if err != nil {
 		return nil, err
