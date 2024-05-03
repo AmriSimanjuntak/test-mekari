@@ -24,9 +24,6 @@ WORKDIR /opt/test-mekari/
 COPY go.mod .
 
 
-
-
-RUN go env -w GOPRIVATE=andromeda.ottopay.id/*
 # RUN go mod download
 RUN go mod verify
 
@@ -54,7 +51,7 @@ COPY --from=builder /etc/group /etc/group
 COPY --from=builder /go/bin/test-mekari .
 
 
-COPY --from=builder /opt/test-mekari/config.yml .
+COPY --from=builder /opt/test-mekari/docker-compose.yml .
 
 ENV TZ=Asia/Jakarta
 
