@@ -1,66 +1,36 @@
 FROM golang:alpine as builder
 
-# Install git + SSL ca certificates
-# Git is required for fetching the dependencies.
-# Ca-certificates is required to call HTTPS endpoints.
-RUN apk update && apk add --no-cache git ca-certificates tzdata && update-ca-certificates
+# Set the current working directory inside the container
+WORKDIR /amri/go/src/test-mekari/
 
-# Create appuser
-ENV USER=appuser
-ENV UID=10001
+# Copy go.mod and go.sum files to the working directory
+COPY go.mod go.sum ./
 
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
+# Download dependencies listed in go.mod and cache them
+RUN go mod download
 
-WORKDIR /opt/test-mekari/
-
-# use modules
-COPY go.mod .
-
-
-
-
-RUN go env -w GOPRIVATE=andromeda.ottopay.id/*
-# RUN go mod download
-RUN go mod verify
-
+# Copy the rest of the application source code to the working directory
 COPY . .
-#COPY config.production.yml config.yml
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-      -ldflags='-w -s -extldflags "-static"' -a \
-      -o /go/bin/test-mekari .
+# Build the Go application
+RUN go build -o test-mekari
 
+# Use a lightweight Alpine image to run the application
+FROM alpine:latest
 
-############################
-# STEP 2 build a small image
-############################
-FROM golang:alpine
+# Set the current working directory inside the container
+WORKDIR /amri/go/src/test-mekari/
 
-# Import from builder.
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
+# Copy the built executable from the builder stage to the working directory
+COPY --from=builder /amri/go/src/test-mekari .
 
-# Copy our static executable
-COPY --from=builder /go/bin/test-mekari .
-
-
-COPY --from=builder /opt/test-mekari/config.yml .
+COPY --from=builder /amri/go/src/test-mekari/docker-compose.yml .
 
 ENV TZ=Asia/Jakarta
 
-# Use an unprivileged user.
-USER appuser:appuser
 
+# Expose port 8080 to the outside world
 EXPOSE 8080
-# Run binary.
+
+# Command to run the executable
 ENTRYPOINT ["./test-mekari"]

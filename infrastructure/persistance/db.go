@@ -3,6 +3,7 @@ package persistance
 import (
 	"Test_Mek/domain/repository"
 	"fmt"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -15,13 +16,22 @@ type Repositories struct {
 }
 
 func NewRepositories() (*Repositories, error) {
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbname := os.Getenv("POSTGRES_DB")
+	sslMode := os.Getenv("POSTGRES_SCHEMA")
+	fmt.Println("pantrek", password)
+
 	db, err := initPostgres("",
-		"postgres.Host", "userDB",
-		"passDB", "postgres.Dbname",
-		"postgres.Port", " postgres.SslMode")
+		host, user,
+		password, dbname,
+		port, sslMode)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("pantrek", password)
 
 	return &Repositories{
 		Db:           db,
@@ -36,7 +46,6 @@ func initPostgres(env, host, user, password, name, port, sslMode string, cfg ...
 	if len(cfg) > 0 {
 		gormCfg = &cfg[0]
 	}
-
 	db, err := gorm.Open(postgres.Open(dsn), gormCfg)
 	if err != nil {
 		return nil, err
